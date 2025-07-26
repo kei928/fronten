@@ -4,36 +4,74 @@ import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import axiosInstance from '../lib/axios';
 
-// Articleデータの型定義に is_read を追加
+
+interface Tag {
+  id: number;
+  name: string;
+}
+
 interface Article {
   id: number;
   title: string;
   url: string;
   memo: string | null;
-  is_read: boolean; // 既読かどうかの状態
+  is_read: boolean;
+  tags: Tag[]; // 記事が持つタグの配列
 }
+
 
 const ArticleListPage = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+
+
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
+  const [allTags, setAllTags] = useState<Tag[]>([]); // DBに登録されている全タグのリスト
+  const [selectedTags, setSelectedTags] = useState<number[]>([]); // フォームで選択されたタグのIDリスト
+  const [newTagName, setNewTagName] = useState(''); // 新しく作成するタグの名前
 
-  const fetchArticles = async () => {
+
+
+  const fetchData = async () => {
     try {
-      const response = await axiosInstance.get('/api/articles/');
-      setArticles(response.data);
+      // APIから記事一覧とタグ一覧を同時に取得
+      const [articlesResponse, tagsResponse] = await Promise.all([
+        axiosInstance.get('/api/articles/'),
+        axiosInstance.get('/api/tags/'),
+      ]);
+      setArticles(articlesResponse.data);
+      setAllTags(tagsResponse.data);
     } catch (error) {
-      console.error('記事の取得に失敗しました:', error);
+      console.error('データの取得に失敗しました:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchArticles();
+    fetchData();
   }, []);
+
+
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) {
+      alert('タグ名を入力してください。');
+      return;
+    }
+    try {
+      const response = await axiosInstance.post('/api/tags/', { name: newTagName });
+      // タグリストを更新し、新しく作成したタグを選択状態にする
+      setAllTags([...allTags, response.data]);
+      setSelectedTags([...selectedTags, response.data.id]);
+      setNewTagName(''); // 入力欄をクリア
+    } catch (error) {
+      console.error('タグの作成に失敗しました:', error);
+      alert('タグの作成に失敗しました。');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -42,24 +80,26 @@ const ArticleListPage = () => {
         url: url,
         title: title,
         memo: memo,
+        tag_ids: selectedTags, // 選択されたタグのIDリストを送信
       });
-      fetchArticles();
+      fetchData(); // 記事とタグを再取得
+      // フォームをリセット
       setUrl('');
       setTitle('');
       setMemo('');
+      setSelectedTags([]);
     } catch (error) {
       console.error('記事の登録に失敗しました:', error);
       alert('記事の登録に失敗しました。');
     }
   };
 
-  // --- ▼▼▼ ここから削除と既読更新の関数を追加 ▼▼▼ ---
+
   const handleDelete = async (id: number) => {
     if (window.confirm('この記事を本当に削除しますか？')) {
       try {
-        // バックエンドのAPIに、指定したIDの記事を削除するようリクエスト
         await axiosInstance.delete(`/api/articles/${id}/`);
-        fetchArticles(); // 削除後にリストを再取得
+        fetchData();
       } catch (error) {
         console.error('記事の削除に失敗しました:', error);
         alert('記事の削除に失敗しました。');
@@ -69,17 +109,15 @@ const ArticleListPage = () => {
 
   const handleToggleReadStatus = async (article: Article) => {
     try {
-      // is_readの状態を現在の反対の値で更新するようリクエスト
       await axiosInstance.patch(`/api/articles/${article.id}/`, {
         is_read: !article.is_read,
       });
-      fetchArticles(); // 更新後にリストを再取得
+      fetchData();
     } catch (error) {
       console.error('既読状態の更新に失敗しました:', error);
       alert('既読状態の更新に失敗しました。');
     }
   };
-  // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
   if (loading) {
     return <div>読み込み中...</div>;
@@ -89,21 +127,53 @@ const ArticleListPage = () => {
     <div style={{ padding: '20px' }}>
       <h1>あとで読むリスト</h1>
 
-      {/* 登録フォームの部分は変更なし */}
       <form onSubmit={handleSubmit} style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
         <h2>新しい記事を登録</h2>
         <div style={{ marginBottom: '10px' }}>
           <label style={{ display: 'block', marginBottom: '5px' }}>URL:</label>
-          <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required style={{ width: '300px', padding: '8px' }} />
+          <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required style={{ width: '300px', padding: '8px' }}/>
         </div>
         <div style={{ marginBottom: '10px' }}>
           <label style={{ display: 'block', marginBottom: '5px' }}>タイトル:</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '300px', padding: '8px' }} />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '300px', padding: '8px' }}/>
         </div>
         <div style={{ marginBottom: '10px' }}>
           <label style={{ display: 'block', marginBottom: '5px' }}>メモ:</label>
-          <textarea value={memo} onChange={(e) => setMemo(e.target.value)} style={{ width: '300px', padding: '8px' }} />
+          <textarea value={memo} onChange={(e) => setMemo(e.target.value)} style={{ width: '300px', padding: '8px' }}/>
         </div>
+
+        <div style={{ marginBottom: '10px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>タグ:</label>
+          <div>
+            {allTags.map((tag) => (
+              <label key={tag.id} style={{ marginRight: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedTags([...selectedTags, tag.id]);
+                    } else {
+                      setSelectedTags(selectedTags.filter((id) => id !== tag.id));
+                    }
+                  }}
+                />
+                {tag.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>新しいタグを作成:</label>
+          <input
+            type="text"
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+          />
+          <button type="button" onClick={handleCreateTag}>タグ作成</button>
+        </div>
+
+
         <button type="submit">記事を登録</button>
       </form>
 
@@ -114,7 +184,6 @@ const ArticleListPage = () => {
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {articles.map((article) => (
             <li key={article.id} style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
-              {/* ▼▼▼ 表示部分を修正 ▼▼▼ */}
               <div>
                 <span style={{ marginRight: '8px', fontWeight: 'bold' }}>
                   {article.is_read ? '[読了]' : '[未読]'}
@@ -130,13 +199,22 @@ const ArticleListPage = () => {
               </div>
               <p style={{ margin: '5px 0', color: '#555' }}>{article.memo}</p>
               
+            
+              <div style={{ margin: '5px 0' }}>
+                {article.tags.map(tag => (
+                  <span key={tag.id} style={{ background: '#eee', padding: '2px 5px', borderRadius: '3px', marginRight: '5px', fontSize: '0.9em' }}>
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+
+
               <button onClick={() => handleToggleReadStatus(article)}>
                 {article.is_read ? '未読に戻す' : '既読にする'}
               </button>
               <button onClick={() => handleDelete(article.id)} style={{ marginLeft: '8px' }}>
                 削除
               </button>
-              {/* ▲▲▲ ここまで修正 ▲▲▲ */}
             </li>
           ))}
         </ul>

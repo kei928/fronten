@@ -1,25 +1,32 @@
 // src/App.tsx
 
 import React from 'react';
-import Navbar from './components/Navbar'; // 作成したNavbarをインポート
-import ArticleListPage from './pages/ArticleListPage'; // ページ本体をインポート
+import Navbar from './components/Navbar';
+import ArticleListPage from './pages/ArticleListPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 function App() {
-  // ここでページの出し分けを行う（将来的にルーティングライブラリを導入）
-  // 今は仮にArticleListPageだけを表示
-  let pageContent = <ArticleListPage />;
-  if (window.location.pathname === '/login') {
-    // pageContent = <LoginPage />; // LoginPageを後で作成
-  } else if (window.location.pathname === '/register') {
-    // pageContent = <RegisterPage />; // RegisterPageを後で作成
+  let pageContent;
+
+  // 現在のURLパスに応じて、表示するコンポーネントを決定
+  switch (window.location.pathname) {
+    case '/login':
+      pageContent = <LoginPage />;
+      break;
+    case '/register':
+      pageContent = <RegisterPage />;
+      break;
+    default: // それ以外のURLはすべて記事一覧ページを表示
+      pageContent = <ArticleListPage />;
+      break;
   }
 
   return (
     <div>
       <Navbar />
-      <main>
-        {/* ここに各ページの内容が表示される */}
-        {pageContent} 
+      <main style={{ padding: '20px' }}>
+        {pageContent}
       </main>
     </div>
   );
