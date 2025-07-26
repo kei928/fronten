@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import axiosInstance from '../lib/axios';
-// import { useNavigate } from 'react-router-dom'; // ルーター導入後に使用
+
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  // const navigate = useNavigate(); // ルーター導入後に使用
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

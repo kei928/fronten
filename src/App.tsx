@@ -1,45 +1,27 @@
 // src/App.tsx
 
 import React from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-
+import { Routes, Route } from 'react-router-dom'; // RoutesとRouteをインポート
 import Navbar from './components/Navbar';
 import ArticleListPage from './pages/ArticleListPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import './App.css'; // スタイルを適用するためのCSSファイル
-
-// ライトテーマを定義
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-  },
-});
+import './App.css';
 
 function App() {
-  let pageContent;
-
-  switch (window.location.pathname) {
-    case '/login':
-      pageContent = <LoginPage />;
-      break;
-    case '/register':
-      pageContent = <RegisterPage />;
-      break;
-    default:
-      pageContent = <ArticleListPage />;
-      break;
-  }
-
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline /> {/* これが背景色などを整えてくれます */}
+    <div>
       <Navbar />
-      <main>
-        {pageContent}
+      <main style={{ padding: '20px' }}>
+        {/* URLに応じて表示するコンポーネントを切り替える設定 */}
+        <Routes>
+          <Route path="/" element={<ArticleListPage />} />
+          <Route path="/articles" element={<ArticleListPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Routes>
       </main>
-    </ThemeProvider>
+    </div>
   );
 }
 

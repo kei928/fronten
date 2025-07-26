@@ -1,11 +1,10 @@
 // src/components/Navbar.tsx
 
 import React, { useEffect, useState } from 'react';
-// import { AppBar, Toolbar, Typography, Button } from '@mui/material'; // Material-UIを使う場合
-// import { Link, useNavigate } from 'react-router-dom'; // React Routerを使う場合
+import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
-  // const navigate = useNavigate(); // React Router
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -16,15 +15,23 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     setIsLoggedIn(false);
-    // ページをリロードしてログイン状態を反映
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
-    <header style={{ background: '#333', color: 'white', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <a href="/articles" style={{ color: 'white', textDecoration: 'none', fontSize: '1.2em' }}>
+    // ▼▼▼ ここのスタイルを変更します ▼▼▼
+    <header style={{ 
+      background: '#f5f5f5', // 明るいグレーに変更
+      color: '#333',         // 文字色を黒に変更
+      padding: '10px 20px', 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      borderBottom: '1px solid #ddd' // 下に境界線を追加
+    }}>
+      <Link to="/" style={{ color: '#333', textDecoration: 'none', fontSize: '1.2em' }}>
         あとで読むアプリ
-      </a>
+      </Link>
       <nav>
         {isLoggedIn ? (
           <button onClick={handleLogout}>
@@ -32,12 +39,13 @@ const Navbar = () => {
           </button>
         ) : (
           <>
-            <a href="/login" style={{ color: 'white', marginRight: '15px' }}>ログイン</a>
-            <a href="/register" style={{ color: 'white' }}>新規登録</a>
+            <Link to="/login" style={{ color: '#333', marginRight: '15px' }}>ログイン</Link>
+            <Link to="/register" style={{ color: '#333' }}>新規登録</Link>
           </>
         )}
       </nav>
     </header>
+    // ▲▲▲ ここまで変更 ▲▲▲
   );
 };
 
