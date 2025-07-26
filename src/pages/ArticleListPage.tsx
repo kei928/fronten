@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import axiosInstance from '../lib/axios';
+import {
+  Container, Box, Typography, TextField, Button, List, ListItem,
+  ListItemText, IconButton, Checkbox, FormControlLabel, FormGroup,
+  Paper, Chip, CircularProgress
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 
 interface Tag {
@@ -123,103 +131,75 @@ const ArticleListPage = () => {
     return <div>読み込み中...</div>;
   }
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>あとで読むリスト</h1>
+  return(
+    <Container maxWidth="md">
+      <Box sx={{ my: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          あとで読むリスト
+        </Typography>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>新しい記事を登録</h2>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>URL:</label>
-          <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required style={{ width: '300px', padding: '8px' }}/>
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>タイトル:</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '300px', padding: '8px' }}/>
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>メモ:</label>
-          <textarea value={memo} onChange={(e) => setMemo(e.target.value)} style={{ width: '300px', padding: '8px' }}/>
-        </div>
+        <Paper component="form" onSubmit={handleSubmit} sx={{ p: 2, mb: 4 }}>
+          <Typography variant="h6">新しい記事をクリップ</Typography>
+          <TextField label="URL" type="url" value={url} onChange={(e) => setUrl(e.target.value)} required fullWidth margin="normal" size="small" />
+          <TextField label="タイトル" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required fullWidth margin="normal" size="small" />
+          <TextField label="メモ" multiline rows={2} value={memo} onChange={(e) => setMemo(e.target.value)} fullWidth margin="normal" size="small" />
 
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>タグ:</label>
-          <div>
-            {allTags.map((tag) => (
-              <label key={tag.id} style={{ marginRight: '10px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedTags.includes(tag.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedTags([...selectedTags, tag.id]);
-                    } else {
-                      setSelectedTags(selectedTags.filter((id) => id !== tag.id));
-                    }
-                  }}
+          <Box sx={{ my: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>タグを選択</Typography>
+            <FormGroup row>
+              {allTags.map((tag) => (
+                <FormControlLabel
+                  key={tag.id}
+                  control={<Checkbox checked={selectedTags.includes(tag.id)} onChange={(e) => {
+                    if (e.target.checked) { setSelectedTags([...selectedTags, tag.id]); }
+                    else { setSelectedTags(selectedTags.filter((id) => id !== tag.id)); }
+                  }} />}
+                  label={tag.name}
                 />
-                {tag.name}
-              </label>
+              ))}
+            </FormGroup>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <TextField label="新しいタグを作成" size="small" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} />
+            <Button onClick={handleCreateTag} variant="outlined" sx={{ ml: 1 }}>作成</Button>
+          </Box>
+
+          <Button type="submit" variant="contained" color="primary">記事を登録</Button>
+        </Paper>
+
+        <Typography variant="h5" component="h2" gutterBottom>
+          保存した記事
+        </Typography>
+        {articles.length === 0 ? (
+          <Typography>記事がまだ登録されていません。</Typography>
+        ) : (
+          <List>
+            {articles.map((article) => (
+              <ListItem key={article.id} divider sx={{ opacity: article.is_read ? 0.6 : 1, py: 2 }}>
+                <IconButton onClick={() => handleToggleReadStatus(article)} edge="start" sx={{ mr: 1 }} title={article.is_read ? '未読に戻す' : '既読にする'}>
+                  {article.is_read ? <CheckCircleOutlineIcon color="primary" /> : <RadioButtonUncheckedIcon />}
+                </IconButton>
+                <ListItemText
+                  primary={<a href={article.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>{article.title}</a>}
+                  secondary={
+                    <>
+                      <Typography component="span" variant="body2" color="text.secondary">{article.memo}</Typography>
+                      <Box sx={{ mt: 1 }}>
+                        {article.tags.map(tag => <Chip key={tag.id} label={tag.name} size="small" sx={{ mr: 0.5 }} />)}
+                      </Box>
+                    </>
+                  }
+                />
+                <IconButton onClick={() => handleDelete(article.id)} edge="end" aria-label="delete" title="削除">
+                  <DeleteIcon />
+                </IconButton>
+              </ListItem>
             ))}
-          </div>
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>新しいタグを作成:</label>
-          <input
-            type="text"
-            value={newTagName}
-            onChange={(e) => setNewTagName(e.target.value)}
-          />
-          <button type="button" onClick={handleCreateTag}>タグ作成</button>
-        </div>
-
-
-        <button type="submit">記事を登録</button>
-      </form>
-
-      <h2>保存した記事一覧</h2>
-      {articles.length === 0 ? (
-        <p>記事がまだ登録されていません。</p>
-      ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {articles.map((article) => (
-            <li key={article.id} style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
-              <div>
-                <span style={{ marginRight: '8px', fontWeight: 'bold' }}>
-                  {article.is_read ? '[読了]' : '[未読]'}
-                </span>
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '1.2em', color: '#007bff', textDecoration: article.is_read ? 'line-through' : 'none' }}
-                >
-                  {article.title}
-                </a>
-              </div>
-              <p style={{ margin: '5px 0', color: '#555' }}>{article.memo}</p>
-              
-            
-              <div style={{ margin: '5px 0' }}>
-                {article.tags.map(tag => (
-                  <span key={tag.id} style={{ background: '#eee', padding: '2px 5px', borderRadius: '3px', marginRight: '5px', fontSize: '0.9em' }}>
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-
-
-              <button onClick={() => handleToggleReadStatus(article)}>
-                {article.is_read ? '未読に戻す' : '既読にする'}
-              </button>
-              <button onClick={() => handleDelete(article.id)} style={{ marginLeft: '8px' }}>
-                削除
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+          </List>
+        )}
+      </Box>
+    </Container>
   );
 };
 
